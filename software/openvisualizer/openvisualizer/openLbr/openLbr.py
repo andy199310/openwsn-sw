@@ -302,7 +302,8 @@ class OpenLbr(eventBusClient.eventBusClient):
                     ipv6dic['hop_limit'] = ipv6dic_inner['hop_limit']
                 ipv6dic['dst_addr'] = ipv6dic_inner['dst_addr']
                 ipv6dic['flow_label'] = ipv6dic_inner['flow_label']
-
+                ipv6dic['traffic_class'] = ipv6dic_inner['traffic_class']
+				
             if ipv6dic['next_header']==self.IANA_ICMPv6:
                 #icmp header
                 if len(ipv6dic['payload'])<5:
@@ -816,9 +817,15 @@ class OpenLbr(eventBusClient.eventBusClient):
             tf = ((pkt_lowpan[0]) >> 3) & 0x03
             if tf == self.IPHC_TF_3B:
                 pkt_ipv6['flow_label'] = ((pkt_lowpan[ptr]) << 16) + ((pkt_lowpan[ptr+1]) << 8) + ((pkt_lowpan[ptr+2]) << 0)
+                pkt_ipv6['traffic_class'] = 0
                 ptr = ptr + 3
             elif tf == self.IPHC_TF_ELIDED:
                 pkt_ipv6['flow_label'] = 0
+                pkt_ipv6['traffic_class'] = 0
+            elif tf == self.IPHC_TF_1B:
+                pkt_ipv6['traffic_class'] = pkt_lowpan[ptr]
+                pkt_ipv6['flow_label'] = 0
+                ptr = ptr + 1
             else:
                 log.error("Unsupported or wrong tf")
             # nh
@@ -946,7 +953,8 @@ class OpenLbr(eventBusClient.eventBusClient):
 
         # payload
         pkt_ipv6['version']        = 6
-        pkt_ipv6['traffic_class']  = 0
+        if 'traffic_class' not in pkt_ipv6:
+            pkt_ipv6['traffic_class']  = 0
         pkt_ipv6['payload']        = pkt_lowpan[ptr:len(pkt_lowpan)]
 
         pkt_ipv6['payload_length'] = len(pkt_ipv6['payload'])

@@ -184,17 +184,21 @@ class NetworkManager(eventBusClient.eventBusClient):
             )
             return
         else:
-            c = None
             try:
 
                 log.debug("GO mote")
-                c = coap.coap(udpPort=5466+self.lastNetworkUpdateCounter)
-                c.maxRetransmit = 2
-                p = c.POST('coap://[bbbb::{0}]/green'.format(mote_address), payload=payload)
-                c.close()
+                from coapthon.client.helperclient import HelperClient
+                host = "bbbb::"+":".join('0' if i.count('0')==4 else i.lstrip('0') for i in mote_address.split(':'))
+                coapClient = HelperClient(server=(host, 5683))
+                coapClient.post(path="green", timeout=20, payload=payload)
+                coapClient.stop()
+                # c = coap.coap(udpPort=5466+self.lastNetworkUpdateCounter)
+                # c.maxRetransmit = 2
+                # p = c.POST('coap://[bbbb::{0}]/green'.format(mote_address), payload=payload)
+                # c.close()
             except:
                 log.error("Got Error!")
-                c.close()
+                # c.close()
                 import sys
                 log.critical("Unexpected error:{0}".format(sys.exc_info()[0]))
                 log.critical("Unexpected error:{0}".format(sys.exc_info()[1]))
