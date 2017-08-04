@@ -78,7 +78,7 @@ class StateElem(object):
             content = self._elemToDict(self.meta)
         else:
             raise ValueError('No aspect named {0}'.format(aspect))
-            
+        
         return json.dumps(content,
                           sort_keys = bool(isPrettyPrint),
                           indent    = 4 if isPrettyPrint else None)
@@ -139,6 +139,17 @@ class StateAsn(StateElem):
         self.data[0]['asn'].update(notif.asn_0_1,
                                    notif.asn_2_3,
                                    notif.asn_4)
+class StateJoined(StateElem):
+    
+    def update(self,notif):
+        StateElem.update(self)
+        if len(self.data)==0:
+            self.data.append({})
+        if 'joinedAsn' not in self.data[0]:
+            self.data[0]['joinedAsn']             = typeAsn.typeAsn()
+        self.data[0]['joinedAsn'].update(notif.joinedAsn_0_1,
+                                   notif.joinedAsn_2_3,
+                                   notif.joinedAsn_4)
 
 class StateMacStats(StateElem):
     
@@ -235,6 +246,7 @@ class StateNeighborsRow(StateElem):
         if len(self.data)==0:
             self.data.append({})
         self.data[0]['used']                     = notif.used
+        self.data[0]['insecure']                 = notif.insecure
         self.data[0]['parentPreference']         = notif.parentPreference
         self.data[0]['stableNeighbor']           = notif.stableNeighbor
         self.data[0]['switchStabilityCounter']   = notif.switchStabilityCounter
@@ -404,6 +416,7 @@ class moteState(eventBusClient.eventBusClient):
     ST_IDMANAGER        = 'IdManager'
     ST_MYDAGRANK        = 'MyDagRank'
     ST_KAPERIOD         = 'kaPeriod'
+    ST_JOINED           = 'Joined'
     ST_ALL              = [
         ST_OUPUTBUFFER,
         ST_ASN,
@@ -416,6 +429,7 @@ class moteState(eventBusClient.eventBusClient):
         ST_IDMANAGER, 
         ST_MYDAGRANK,
         ST_KAPERIOD,
+        ST_JOINED,
     ]
     
     TRIGGER_DAGROOT     = 'DAGroot'
@@ -442,6 +456,7 @@ class moteState(eventBusClient.eventBusClient):
     COMMAND_SET_6PRESPONSE        = ['6pResponse',    16, 1]
     COMMAND_SET_UINJECTPERIOD     = ['uinjectPeriod', 17, 1]
     COMMAND_SET_ECHO_REPLY_STATUS = ['echoReply',     18, 1]
+    COMMAND_SET_JOIN_KEY          = ['joinKey',       19,16]
     COMMAND_ALL                   = [
         COMMAND_SET_EBPERIOD ,
         COMMAND_SET_CHANNEL,
@@ -462,6 +477,7 @@ class moteState(eventBusClient.eventBusClient):
         COMMAND_SET_6PRESPONSE,
         COMMAND_SET_UINJECTPERIOD,
         COMMAND_SET_ECHO_REPLY_STATUS,
+        COMMAND_SET_JOIN_KEY,
     ]
 
     TRIGGER_ALL         = [
@@ -484,6 +500,7 @@ class moteState(eventBusClient.eventBusClient):
         
         self.state[self.ST_OUPUTBUFFER]     = StateOutputBuffer()
         self.state[self.ST_ASN]             = StateAsn()
+        self.state[self.ST_JOINED]          = StateJoined()
         self.state[self.ST_MACSTATS]        = StateMacStats()
         self.state[self.ST_SCHEDULE]        = StateTable(
                                                 StateScheduleRow,
@@ -508,6 +525,7 @@ class moteState(eventBusClient.eventBusClient):
                                                 columnOrder = '.'.join(
                                                     [
                                                         'used',
+                                                        'insecure',
                                                         'parentPreference',
                                                         'stableNeighbor',
                                                         'switchStabilityCounter',
@@ -556,6 +574,9 @@ class moteState(eventBusClient.eventBusClient):
                 self.state[self.ST_MYDAGRANK].update,
             self.parserStatus.named_tuple[self.ST_KAPERIOD]:
                 self.state[self.ST_KAPERIOD].update,
+            self.parserStatus.named_tuple[self.ST_JOINED]:
+                self.state[self.ST_JOINED].update,
+
         }
         
         # initialize parent class
