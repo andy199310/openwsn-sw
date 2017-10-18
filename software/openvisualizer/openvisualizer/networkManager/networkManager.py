@@ -119,11 +119,28 @@ class NetworkManager(eventBusClient.eventBusClient):
 
     def _sendScheduleTableToMote(self, motes):
         log.debug("Starting sending schedule. Total entry: {0}".format(len(self.scheduleTable)))
+
+        # reorder from top to bottom
+        order_motes = dict()
         for mote in motes:
+            downward_route_length = self._findHopInTree(mote)
+            log.debug(downward_route_length)
+            order_motes[mote] = downward_route_length
+            log.debug("Mote: {0} in {1}".format(mote, downward_route_length))
+
+        import operator
+        sorted_motes = sorted(order_motes.items(), key=operator.itemgetter(1))
+        log.debug(sorted_motes)
+
+        for sorted_mote in sorted_motes:
+            log.error(sorted_mote)
+
+        for sorted_mote in sorted_motes:
+            mote = sorted_mote[0]
             log.debug("Parsing {0}".format(mote))
             entryCount = 0
             is_root = False
-            if mote[-2:] == '01' or mote[-2:] == '88' or mote[-4:] == 'a72e':   # TODO make it better
+            if mote[-2:] == '01' or mote[-2:] == '88':   # TODO make it better
                 is_root = True
             entrys = list()
 
@@ -366,3 +383,9 @@ class NetworkManager(eventBusClient.eventBusClient):
         else:
             # print "enough"
             return True, result
+
+    def _findHopInTree(self, mote):
+        for edge in self.edges:
+            if edge['u'] == mote:
+                return self._findHopInTree(edge['v']) + 1
+        return 0
