@@ -51,7 +51,7 @@ class NetworkManager(eventBusClient.eventBusClient):
         self.edges = None
         self.scheduleTable = []
         self.dag_root_moteState = None
-        self.schedule_back_off = 30
+        self.schedule_back_off = 1
         self.schedule_running = False
 
 
@@ -109,7 +109,14 @@ class NetworkManager(eventBusClient.eventBusClient):
                 log.debug("| {0:4} | {1:4} | {2:4} | {3:4} |".format(item[0][-4:], item[1][-4:], item[2], item[3]))
             log.debug("==============================")
             self.scheduleTable = results
-            self._sendScheduleTableToMote(motes)
+
+            nothing = []    # nothing is prevent eventBus from merge list in results
+            self.dispatch(
+                signal='scheduleChanged',
+                data=(results, nothing)
+            )
+
+            # self._sendScheduleTableToMote(motes)
         except:
             log.error("Got Error!")
             import sys

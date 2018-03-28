@@ -47,6 +47,9 @@ components = {
   40: "USERIALBRIDGE",
   41: "UEXPIRATION",
   42: "UMONITOR",
+  0x50: "CGREEN",
+  0x51: "CREPORTASN",
+  0x52: "CSCHEDULE",
 }
 
 errorDescriptions = {
@@ -122,7 +125,9 @@ errorDescriptions = {
   88: "Get header type: {0} at slot {1}",
   89: "Get from src addr type {0}. last {1}",
   98: "Error. slot {0}. length: {1}",
-  99: "Error. frameType {0}"
+  99: "Error. frameType {0}",
+
+  240: "Here \o/"
 }
 
 sixtop_returncode = {

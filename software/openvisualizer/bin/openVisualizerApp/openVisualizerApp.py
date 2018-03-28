@@ -30,6 +30,7 @@ from openvisualizer                 import appdirs
 from openvisualizer.remoteConnectorServer   import remoteConnectorServer
 
 from openvisualizer.networkManager  import networkManager
+from openvisualizer.scheduleDistributor  import scheduleDistributor
 
 import openvisualizer.openvisualizer_utils as u
     
@@ -62,6 +63,7 @@ class OpenVisualizerApp(object):
         self.udpInject            = UDPInject.UDPInject()
 
         self.networkManager       = networkManager.NetworkManager()
+        self.scheduleDistributor  = scheduleDistributor.ScheduleDistributor()
 
         self.DAGrootList          = []
         # create openTun call last since indicates prefix
