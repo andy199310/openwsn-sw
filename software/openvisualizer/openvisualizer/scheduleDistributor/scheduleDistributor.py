@@ -17,8 +17,9 @@ from openvisualizer.eventBus import eventBusClient
 
 class ScheduleDistributor(eventBusClient.eventBusClient):
 
-    CELL_TYPE_TX = 0
-    CELL_TYPE_RX = 1
+    CELL_TYPE_TX     = 0
+    CELL_TYPE_RX     = 1
+    CELL_TYPE_REMOVE = 8
 
     def __init__(self):
         # log
@@ -56,9 +57,8 @@ class ScheduleDistributor(eventBusClient.eventBusClient):
         self.edges = None
         self.overAllScheduleTable = []
         self.motesScheduleTable = {}
+        self.pastMotesScheduleTable = {}
         self.dag_root_moteState = None
-        self.schedule_back_off = 30
-        self.schedule_running = False
 
 
     # ======================== public ==========================================
@@ -75,15 +75,16 @@ class ScheduleDistributor(eventBusClient.eventBusClient):
         log.info("Get schedule changed")
         self.overAllScheduleTable = data[0]
 
-        log.debug("| From |  To  | Slot | Chan |")
-        for item in data[0]:
-            log.debug("| {0:4} | {1:4} | {2:4} | {3:4} |".format(item[0][-4:], item[1][-4:], item[2], item[3]))
-        log.debug("==============================")
+        if log.isEnabledFor(logging.DEBUG):
+            self._printOverAllScheduleTable()
 
         self._breakScheduleTableToMoteScheduleTable()
         self._sendScheduleTableToMote()
 
     def _breakScheduleTableToMoteScheduleTable(self):
+        # reset mote schedule table for compare
+        self.motesScheduleTable = {}
+
         log.info("Total entry: {0}".format(len(self.overAllScheduleTable)))
         for entry in self.overAllScheduleTable:
             # set up TX
@@ -94,26 +95,58 @@ class ScheduleDistributor(eventBusClient.eventBusClient):
 
     def _addEntryToMoteScheduleTable(self, mote, neighbor, slot_offset, channel_offset, cell_type):
         if mote not in self.motesScheduleTable:
-            log.debug("Add new mote")
             self.motesScheduleTable[mote] = []
         self.motesScheduleTable[mote].append({'neighbor': neighbor,
                                               'slotOffset': slot_offset,
                                               'channelOffset': channel_offset,
                                               'cellType': cell_type})
 
+    def _copyScheduleTableToPastList(self, mote):
+        self.pastMotesScheduleTable[mote] = self.motesScheduleTable[mote]
+
+    def _getDifferentScheduleEntryList(self, mote_id):
+        if mote_id not in self.pastMotesScheduleTable:
+            return self.motesScheduleTable[mote_id]
+        past_schedule_entry_list = self.pastMotesScheduleTable[mote_id]
+        new_schedule_entry_list = self.motesScheduleTable[mote_id]
+
+        different_list = list()
+        for newEntry in new_schedule_entry_list:
+            found_same_entry = [x for x in past_schedule_entry_list if x == newEntry]
+            if len(found_same_entry) is 0:
+                different_list.append(newEntry)
+            else:
+                found_same_entry[0]['found'] = True
+
+        remove_entry_list = [x for x in past_schedule_entry_list if 'found' not in x]
+        for remove_entry in remove_entry_list:
+            remove_entry['cellType'] = ScheduleDistributor.CELL_TYPE_REMOVE
+
+        # first remove than insert
+        remove_entry_list.extend(different_list)
+        return remove_entry_list
+
     def _sendScheduleTableToMote(self):
         # TODO sending order
-        log.debug("Hello")
         for mote_id, schedule_list in self.motesScheduleTable.iteritems():
             log.info("Process {0:4} schedule table which contain {1:2} entry.".format(mote_id, len(schedule_list)))
+
+            different_entry_list = self._getDifferentScheduleEntryList(mote_id)
+            log.info("{0:4} contain {1:2} entry that is different from previous.".format(mote_id, len(different_entry_list)))
+
+            if log.isEnabledFor(logging.DEBUG):
+                self._printScheduleDifferentList(different_entry_list)
+
             # TODO check fragments
             common_length = 15
-            payload = self._assemblePayloadFromEntryList(mote_id, common_length, schedule_list)
-            is_root = False
-            if mote_id[-2:] == '01' or mote_id[-2:] == '88':  # TODO make it better
-                is_root = True
-            self._sendPayloadToMote(mote_id, payload, is_root)
+            payload = self._assemblePayloadFromEntryList(mote_id, common_length, different_entry_list)
+
+            self._sendPayloadToMote(mote_id, payload)
+
+            self.pastMotesScheduleTable[mote_id] = self.motesScheduleTable[mote_id]
+
             log.info("Done send to {0:4}".format(mote_id))
+            log.info("====================================")
 
     def _assemblePayloadFromEntryList(self, mote_id, common_length, entry_list):
         payload = list()
@@ -140,7 +173,11 @@ class ScheduleDistributor(eventBusClient.eventBusClient):
 
         return bytearray(payload)
 
-    def _sendPayloadToMote(self, mote_address, payload, is_root):
+    def _sendPayloadToMote(self, mote_address, payload):
+        is_root = False
+        if mote_address[-2:] == '01' or mote_address[-2:] == '88':  # TODO make it better
+            is_root = True
+
         if is_root:
             log.debug("GO root")
             self.dispatch(
@@ -172,7 +209,6 @@ class ScheduleDistributor(eventBusClient.eventBusClient):
                 log.critical("Unexpected error:{0}".format(sys.exc_info()[0]))
                 log.critical("Unexpected error:{0}".format(sys.exc_info()[1]))
 
-            log.debug("====================================")
         return
 
     def _updateRootMoteState_notif(self, sender, signal, data):
@@ -186,3 +222,18 @@ class ScheduleDistributor(eventBusClient.eventBusClient):
             if edge['u'] == mote:
                 return self._findHopInTree(edge['v']) + 1
         return 0
+
+    def _printOverAllScheduleTable(self):
+        log.debug("| From |  To  | Slot | Chan |")
+        for item in self.overAllScheduleTable:
+            log.debug("| {0:4} | {1:4} | {2:4} | {3:4} |".format(item[0][-4:], item[1][-4:], item[2], item[3]))
+        log.debug("-----------------------------")
+
+    def _printScheduleDifferentList(self, different_list):
+        log.debug("| Type | Chan | Slot | Addr |")
+        for different_entry in different_list:
+            log.debug("| {0:4} | {1:4} | {2:4} | {3:4} |".format(different_entry['cellType'],
+                                                                 different_entry['channelOffset'],
+                                                                 different_entry['slotOffset'],
+                                                                 different_entry['neighbor'][-4:]))
+        log.debug("-----------------------------")

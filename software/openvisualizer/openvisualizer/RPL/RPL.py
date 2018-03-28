@@ -265,7 +265,7 @@ class RPL(eventBusClient.eventBusClient):
         output               = '\n'.join(output)
         if log.isEnabledFor(logging.DEBUG):
             log.debug(output)
-        print output
+        # print output
         
         # if you get here, the DAO was parsed correctly
         

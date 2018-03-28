@@ -69,6 +69,11 @@ class NetworkManager(eventBusClient.eventBusClient):
         log.debug("New counter: {0}".format(self.lastNetworkUpdateCounter))
         self.motes = data[0]
         self.edges = data[1]
+
+        if self._checkTopology() is False:
+            log.warning("Topology is not complete, stop schedule!")
+            return
+
         # wait x second for newer dao
         timer = Timer(self.schedule_back_off, self._doCalculate, [self.lastNetworkUpdateCounter])
         timer.start()
@@ -396,3 +401,12 @@ class NetworkManager(eventBusClient.eventBusClient):
             if edge['u'] == mote:
                 return self._findHopInTree(edge['v']) + 1
         return 0
+
+    def _checkTopology(self):
+        for mote in self.motes:
+            if self._findHopInTree(mote) is 0:
+                if mote[-2:] == '01' or mote[-2:] == '88':  # TODO make it better
+                    continue
+                else:
+                    return False
+        return True
