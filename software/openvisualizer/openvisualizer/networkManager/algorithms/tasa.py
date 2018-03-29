@@ -1,3 +1,6 @@
+import operator
+
+
 def tasaSimpleAlgorithms(motes, local_q, edges, max_assignable_slot, start_offset, max_assignable_channel):
     result = []
     edge_relation = {}

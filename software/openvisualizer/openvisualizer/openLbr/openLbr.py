@@ -390,7 +390,7 @@ class OpenLbr(eventBusClient.eventBusClient):
 
             # log.error(ipv6dic['app_payload'])
             # compute creportasn UDP checksum
-            creport_asn_payload_length = 23
+            creport_asn_payload_length = 27
             if len(ipv6dic['app_payload']) >= creport_asn_payload_length:
                 if ipv6dic['app_payload'][-creport_asn_payload_length] == 0x54 and ipv6dic['app_payload'][-creport_asn_payload_length+1] == 0x66:
                     all_data = list()

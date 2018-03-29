@@ -107,8 +107,8 @@ class NetworkManager(eventBusClient.eventBusClient):
             log.debug("End algorithm")
 
             # make offset
-            for item in results:
-                item[2] = (item[2] - self.start_offset) * 3 + self.start_offset
+            # for item in results:
+            #     item[2] = (item[2] - self.start_offset) * 3 + self.start_offset
 
             log.debug("| From |  To  | Slot | Chan |")
             for item in results:
