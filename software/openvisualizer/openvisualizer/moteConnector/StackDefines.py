@@ -127,7 +127,7 @@ errorDescriptions = {
   98: "Error. slot {0}. length: {1}",
   99: "Error. frameType {0}",
 
-  240: "Here \o/"
+  240: "Here \o/ [{0}], [{1}]"
 }
 
 sixtop_returncode = {
