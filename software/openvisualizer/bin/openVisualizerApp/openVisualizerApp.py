@@ -31,6 +31,7 @@ from openvisualizer.remoteConnectorServer   import remoteConnectorServer
 
 from openvisualizer.networkManager  import networkManager
 from openvisualizer.scheduleDistributor  import scheduleDistributor
+from openvisualizer.simulatorHelper import simulatorHelper
 
 import openvisualizer.openvisualizer_utils as u
     
@@ -64,6 +65,8 @@ class OpenVisualizerApp(object):
 
         self.networkManager       = networkManager.NetworkManager()
         self.scheduleDistributor  = scheduleDistributor.ScheduleDistributor()
+        if simulatorMode:
+            self.simulatorHelper  = simulatorHelper.SimulatorHelper(self)
 
         self.DAGrootList          = []
         # create openTun call last since indicates prefix
