@@ -18,6 +18,8 @@ from openvisualizer.eventBus import eventBusClient
 
 class NetworkManager(eventBusClient.eventBusClient):
 
+    CREPORT_ASN_PAYLOAD_LENGTH = 27
+
     def __init__(self):
         # log
         log.info("Network Manager started!")
@@ -52,7 +54,7 @@ class NetworkManager(eventBusClient.eventBusClient):
         self.edges = None
         self.scheduleTable = []
         self.dag_root_moteState = None
-        self.schedule_back_off = 1
+        self.schedule_back_off = 10
         self.schedule_running = False
 
 
@@ -107,8 +109,8 @@ class NetworkManager(eventBusClient.eventBusClient):
             log.debug("End algorithm")
 
             # make offset
-            # for item in results:
-            #     item[2] = (item[2] - self.start_offset) * 3 + self.start_offset
+            for item in results:
+                item[2] = (item[2] - self.start_offset) * 2 + self.start_offset
 
             log.debug("| From |  To  | Slot | Chan |")
             for item in results:

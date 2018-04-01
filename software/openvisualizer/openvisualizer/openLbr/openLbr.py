@@ -4,6 +4,9 @@
 # Released under the BSD 3-Clause license as published at the link below.
 # https://openwsn.atlassian.net/wiki/display/OW/License
 import logging
+
+from openvisualizer.networkManager.networkManager import NetworkManager
+
 log = logging.getLogger('openLbr')
 log.setLevel(logging.ERROR)
 log.addHandler(logging.NullHandler())
@@ -390,7 +393,7 @@ class OpenLbr(eventBusClient.eventBusClient):
 
             # log.error(ipv6dic['app_payload'])
             # compute creportasn UDP checksum
-            creport_asn_payload_length = 27
+            creport_asn_payload_length = NetworkManager.CREPORT_ASN_PAYLOAD_LENGTH
             if len(ipv6dic['app_payload']) >= creport_asn_payload_length:
                 if ipv6dic['app_payload'][-creport_asn_payload_length] == 0x54 and ipv6dic['app_payload'][-creport_asn_payload_length+1] == 0x66:
                     all_data = list()
@@ -418,6 +421,11 @@ class OpenLbr(eventBusClient.eventBusClient):
 
                     ipv6dic['payload'][6] = int(checksum/256)
                     ipv6dic['payload'][7] = int(checksum%256)
+
+                    self.dispatch(
+                        signal='targetPacketSniffer',
+                        data=(ipv6dic)
+                    )
 
             success = self._dispatchProtocol(dispatchSignal,(ipv6dic['src_addr'],ipv6dic['app_payload']))
             

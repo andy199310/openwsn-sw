@@ -4,6 +4,9 @@
 # Released under the BSD 3-Clause license as published at the link below.
 # https://openwsn.atlassian.net/wiki/display/OW/License
 import logging
+
+from openvisualizer.networkManager.networkManager import NetworkManager
+
 log = logging.getLogger('ParserData')
 log.setLevel(logging.ERROR)
 log.addHandler(logging.NullHandler())
@@ -106,7 +109,7 @@ class ParserData(Parser.Parser):
         else:
             pass      
 
-        creport_asn_payload_length = 27
+        creport_asn_payload_length = NetworkManager.CREPORT_ASN_PAYLOAD_LENGTH
         if len(input) > creport_asn_payload_length: #test creportasn
             if input[-creport_asn_payload_length] == 0x54 and input[-creport_asn_payload_length+1] == 0x66:
                 log.debug("Found creportASN!")
