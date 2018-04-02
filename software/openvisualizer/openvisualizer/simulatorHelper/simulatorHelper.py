@@ -173,16 +173,21 @@ class SimulatorHelper(eventBusClient.eventBusClient):
         self._analysis_packet[mote_src].append(new_entry)
 
     def _printAnalysisLog(self):
-        log.debug("| Mote |Count |Avg.D |Avg.IP| Lost | Dup  |")
+        log.debug("| Mote |Count |Cnt!D |Avg.D |Avg.IP| Lost | Dup  |")
         for mote, entries in self._analysis_packet.iteritems():
-            log.debug("|{0:6}|{1:6}|{2:6}|{3:6}|{4:6}|{5:6}|".format(mote[-4:],
-                                                                     len([d for d in entries if d["duplicate"] is False]),
-                                                                     sum(d['diff'] for d in entries if d["duplicate"] is False) / len(entries),
-                                                                     sum(d['inter_packet_time'] for d in entries if d['inter_packet_time'] is not None and d["duplicate"] is False) / len(entries),
-                                                                     sum(d['packet_loss'] for d in entries if d["duplicate"] is False),
-                                                                     len([d for d in entries if d["duplicate"] is True])
-                                                               ))
-        log.debug("===========================================")
+            packet_entries_without_duplicate = [e for e in entries if e["duplicate"] is False]
+            packet_entries_without_duplicate_length = len(packet_entries_without_duplicate)
+            log.debug("|{0:6}|{1:6}|{2:6}|{3:6}|{4:6}|{5:6}|{6:6}|".format(
+                mote[-4:],
+                len(entries),
+                packet_entries_without_duplicate_length,
+                sum(d['diff'] for d in packet_entries_without_duplicate) / packet_entries_without_duplicate_length,
+                sum(d['inter_packet_time'] for d in packet_entries_without_duplicate if d['inter_packet_time'] is not None) / packet_entries_without_duplicate_length,
+                sum(d['packet_loss'] for d in packet_entries_without_duplicate),
+                len(entries) - packet_entries_without_duplicate_length
+            ))
+
+        log.debug("==================================================")
 
     def _exportSimulationResult(self):
         log.debug(1)
