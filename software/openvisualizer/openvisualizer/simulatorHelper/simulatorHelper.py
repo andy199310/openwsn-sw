@@ -204,7 +204,7 @@ class SimulatorHelper(eventBusClient.eventBusClient):
     def _exportAnalysisLog(self):
         import json
         with open('result-analysisLog.json', 'w') as fp:
-            json.dump(self._packet_log, fp)
+            json.dump(self._analysis_packet, fp)
 
     def _exportAnalysisResult(self):
         import json
