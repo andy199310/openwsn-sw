@@ -8,6 +8,7 @@ import operator
 
 from openvisualizer.moteState import moteState
 from openvisualizer.networkManager.algorithms.tasa import tasaSimpleAlgorithms
+from openvisualizer.networkManager.algorithms.tasa_pdr import tasa_pdr_algorithms
 
 log = logging.getLogger('networkManager')
 log.setLevel(logging.ERROR)
@@ -54,7 +55,7 @@ class NetworkManager(eventBusClient.eventBusClient):
         self.edges = None
         self.scheduleTable = []
         self.dag_root_moteState = None
-        self.schedule_back_off = 10
+        self.schedule_back_off = 30
         self.schedule_running = False
 
 
@@ -102,7 +103,10 @@ class NetworkManager(eventBusClient.eventBusClient):
             local_queue = {}
             for mote in motes:
                 local_queue[mote] = 1
-            succeed, results = tasaSimpleAlgorithms(motes, local_queue, edges, self.max_assignable_slot, self.start_offset, self.max_assignable_channel)
+            # succeed, results = tasaSimpleAlgorithms(motes, local_queue, edges, self.max_assignable_slot, self.start_offset, self.max_assignable_channel)
+
+            succeed, results = tasa_pdr_algorithms(motes, local_queue, edges, self.max_assignable_slot, self.start_offset, self.max_assignable_channel)
+
             if not succeed:
                 log.critical("Scheduler cannot assign all edge!")
             # results = self._simplestAlgorithms(motes, edges, self.max_assignable_slot, self.start_offset, self.max_assignable_channel)
