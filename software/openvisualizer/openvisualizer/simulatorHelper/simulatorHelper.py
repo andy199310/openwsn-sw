@@ -51,6 +51,7 @@ class SimulatorHelper(eventBusClient.eventBusClient):
         self._packet_log = []
         self._analysis_packet = {}
 
+        self._last_tick_asn = 0
         self._timer = Timer(SimulatorHelper.TICK_INTER_SECOND, self._simulatorHelperTick)
         self._timer.start()
 
@@ -72,7 +73,8 @@ class SimulatorHelper(eventBusClient.eventBusClient):
             for asn_item in asn_list:
                 asn = asn * 256 + asn_item
             asn_in_second = asn * SimulatorHelper.SLOT_LENGTH / 1000
-            log.debug("Current asn: {0}, second: {1}".format(asn, asn_in_second))
+            speed = float((asn - self._last_tick_asn) * SimulatorHelper.SLOT_LENGTH / 1000) / SimulatorHelper.TICK_INTER_SECOND
+            log.debug("Current asn: {0}, second: {1} (Speed: {2:.2})".format(asn, asn_in_second, speed))
 
             if asn_in_second > SimulatorHelper.SIMULATION_TIME:
                 log.info("Stop simulation!")
@@ -85,6 +87,7 @@ class SimulatorHelper(eventBusClient.eventBusClient):
                 return
 
         self._printAnalysisLog()
+        self._last_tick_asn = asn
         Timer(SimulatorHelper.TICK_INTER_SECOND, self._simulatorHelperTick).start()
 
     def _updateRootMoteState_notif(self, sender, signal, data):
