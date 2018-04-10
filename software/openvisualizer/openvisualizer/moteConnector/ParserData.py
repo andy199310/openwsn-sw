@@ -94,9 +94,9 @@ class ParserData(Parser.Parser):
                     pass
                 else:
                     # this usually happens when the serial port framing is not correct and more than one message is parsed at the same time. this will be solved with HDLC framing.
-                    print "Wrong latency computation {0} = {1} mS".format(str(node),timeinus)
-                    print ",".join(hex(c) for c in input)
-                    log.warning("Wrong latency computation {0} = {1} mS".format(str(node),timeinus))
+                    # print "Wrong latency computation {0} = {1} mS".format(str(node),timeinus)
+                    # print ",".join(hex(c) for c in input)
+                    # log.warning("Wrong latency computation {0} = {1} mS".format(str(node),timeinus))
                     pass
                 # in case we want to send the computed time to internet..
                 # computed=struct.pack('<H', timeinus)#to be appended to the pkt
