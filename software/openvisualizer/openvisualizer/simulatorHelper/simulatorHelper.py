@@ -169,6 +169,7 @@ class SimulatorHelper(eventBusClient.eventBusClient):
             self._analysis_packet[mote_src] = []
             new_entry["packet_loss"] = 0
             new_entry["inter_packet_time"] = None  # TODO what XD (link with _printAnalysisLog)
+            new_entry["diff"] = 50  # if this is first packet, set to half of slotframe length
 
         self._analysis_packet[mote_src].append(new_entry)
 
@@ -177,6 +178,8 @@ class SimulatorHelper(eventBusClient.eventBusClient):
         for mote, entries in self._analysis_packet.iteritems():
             packet_entries_without_duplicate = [e for e in entries if e["duplicate"] is False]
             packet_entries_without_duplicate_length = len(packet_entries_without_duplicate)
+            if packet_entries_without_duplicate_length == 0:
+                continue
             log.debug("|{0:6}|{1:6}|{2:6}|{3:6}|{4:6}|{5:6}|{6:6}|".format(
                 mote[-4:],
                 len(entries),

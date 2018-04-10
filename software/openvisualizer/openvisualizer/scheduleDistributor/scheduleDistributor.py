@@ -1,10 +1,13 @@
 # this is schedule distributor!
 
 import logging
+from difflib import SequenceMatcher
 from threading import Timer
 
 from coap import coap
 import operator
+
+from math import floor
 
 from openvisualizer.moteState import moteState
 
@@ -23,7 +26,6 @@ class ScheduleDistributor(eventBusClient.eventBusClient):
 
     def __init__(self):
         # log
-        print "FFFFFFF"
         log.info("Schedule Distributor started!")
 
         # store params
@@ -126,6 +128,48 @@ class ScheduleDistributor(eventBusClient.eventBusClient):
         remove_entry_list.extend(different_list)
         return remove_entry_list
 
+    def _getCommonLength(self, destination_address, entry_list):
+        common_length = 100
+        destination_address = destination_address.replace(":", "")
+        sequence_matcher = SequenceMatcher(None, destination_address)
+        for entry in entry_list:
+            neighbor_address = entry["neighbor"].replace(":", "")
+            sequence_matcher.set_seq2(neighbor_address)
+            result = sequence_matcher.find_longest_match(0, len(destination_address), 0, len(neighbor_address))
+            common_length = min(common_length, result.size)
+
+        # max length is 19 (4*4 + 3:)
+        common_length_in_bytes = 8 + (common_length - common_length % 2) / 2
+        return common_length_in_bytes
+
+    def _getAvailableEntryForApplicationLayerPayload(self, mote_id, common_length):
+        mote_id_in_list = []
+        mote_id_trim = mote_id.replace(":", "")
+        for (c1, c2) in zip(mote_id_trim[0::2], mote_id_trim[1::2]):
+            mote_id_in_list.append(int(c1 + c2, 16))
+
+        route = self._dispatchAndGetResult(signal='getSourceRoute', data=mote_id_in_list)
+
+        layer_2_mac = 23 + 2
+        layer_3_lowpan = 22 + 1  # 1 for traffic class
+        layer_4_udp = 8
+        layer_7_coap = 17
+
+        # TODO real source routing
+        source_routing_length = 16
+
+        max_physical_layer = 128
+
+        available_byte = max_physical_layer - layer_2_mac - layer_3_lowpan - layer_4_udp - layer_7_coap - source_routing_length
+
+        scheduling_header_length = 2
+        each_entry_length = 2 + (16 - common_length)
+
+        available_byte -= scheduling_header_length
+        available_entry = floor(available_byte / each_entry_length)
+
+        return available_entry
+
     def _sendScheduleTableToMote(self):
         # TODO sending order
         for mote_id, schedule_list in self.motesScheduleTable.iteritems():
@@ -137,11 +181,26 @@ class ScheduleDistributor(eventBusClient.eventBusClient):
             if log.isEnabledFor(logging.DEBUG):
                 self._printScheduleDifferentList(different_entry_list)
 
-            # TODO check fragments
-            common_length = 15
-            payload = self._assemblePayloadFromEntryList(mote_id, common_length, different_entry_list)
+            # calculate common length
+            common_length = int(self._getCommonLength(mote_id, different_entry_list))
 
-            self._sendPayloadToMote(mote_id, payload)
+            # each packet entry length
+            each_packet_entry_length = int(self._getAvailableEntryForApplicationLayerPayload(mote_id, common_length))
+
+            log.info("Common length: {0}, Each packet entry length : {1}".format(common_length, each_packet_entry_length))
+
+            for i in range(0, len(different_entry_list), each_packet_entry_length):
+                current_packet_entry_list = different_entry_list[i:i+each_packet_entry_length]
+                log.info("Sequence {0:2} have {1:2} entry to send".format((i/each_packet_entry_length)+1, len(current_packet_entry_list)))
+                payload = self._assemblePayloadFromEntryList(mote_id, common_length, current_packet_entry_list)
+                try:
+                    self._sendPayloadToMote(mote_id, payload)
+                except:
+                    log.error("Got Error!")
+                    import sys
+                    log.critical("Unexpected error:{0}".format(sys.exc_info()[0]))
+                    log.critical("Unexpected error:{0}".format(sys.exc_info()[1]))
+                log.info("__________________________________________________")
 
             self.pastMotesScheduleTable[mote_id] = self.motesScheduleTable[mote_id]
 
