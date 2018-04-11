@@ -106,7 +106,11 @@ class NetworkManager(eventBusClient.eventBusClient):
                 local_queue[mote] = 1
             # succeed, results = tasaSimpleAlgorithms(motes, local_queue, edges, self.max_assignable_slot, self.start_offset, self.max_assignable_channel)
 
-            pdr = self._openVisualizerApp.gPDRr
+            # TODO better PDR
+            if self._openVisualizerApp.gPDRr is None:
+                pdr = 1
+            else:
+                pdr = self._openVisualizerApp.gPDRr
 
             succeed, results = tasa_pdr_algorithms(motes, local_queue, edges, self.max_assignable_slot, self.start_offset, self.max_assignable_channel, pdr)
 
