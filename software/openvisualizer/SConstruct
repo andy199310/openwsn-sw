@@ -191,6 +191,13 @@ AddOption('--rover',
     action    = 'store_true')
 runnerEnv['ROVEROPT'] = GetOption('roverOpt')
 
+#============================ Simulation options ==============================
+AddOption('--gPDRr',
+    dest      = 'gPDRr',
+    type      = 'float',
+    action    = 'store')
+runnerEnv['GPDRR'] = GetOption('gPDRr')
+
 #============================ SCons targets ===================================
 
 #===== copy-simfw

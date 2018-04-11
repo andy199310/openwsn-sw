@@ -42,7 +42,7 @@ class OpenVisualizerApp(object):
     '''
     
     def __init__(self,confdir,datadir,logdir,simulatorMode,numMotes,trace,debug,usePageZero,simTopology,iotlabmotes, pathTopo, roverMode):
-        
+
         # store params
         self.confdir              = confdir
         self.datadir              = datadir
@@ -420,6 +420,14 @@ def _addParserArgs(parser):
         action     = 'store',
         help       = 'a topology can be loaded from a json file'
     )
+
+    parser.add_argument('-gpdr', '--gPDRr',
+        dest='gPDRr',
+        default=None,
+        type=float,
+        help='Simulation round trip PDR'
+    )
+
 
 
 def _forceSlashSep(ospath, debug):

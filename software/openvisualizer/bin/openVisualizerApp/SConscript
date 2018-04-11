@@ -67,7 +67,9 @@ def uiRunner(target, source, env):
         argList.append('-p {0}'.format(env['PORTOPT']))
     if env['ROVEROPT']:
         argList.append('--rover')
-    
+    if env['GPDRR']:
+        argList.append('--gPDRr={0}'.format(env['GPDRR']))
+    print(argList)
     result = 0
     try:
         p = subprocess.Popen(argList, env=subEnv)
