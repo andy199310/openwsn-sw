@@ -52,6 +52,7 @@ class SimulatorHelper(eventBusClient.eventBusClient):
         self._analysis_packet = {}
 
         self._last_tick_asn = 0
+        self._stuck_counter = 0
         self._timer = Timer(SimulatorHelper.TICK_INTER_SECOND, self._simulatorHelperTick)
         self._timer.start()
 
@@ -76,18 +77,24 @@ class SimulatorHelper(eventBusClient.eventBusClient):
             speed = float((asn - self._last_tick_asn) * SimulatorHelper.SLOT_LENGTH / 1000) / SimulatorHelper.TICK_INTER_SECOND
             log.debug("Current asn: {0}, second: {1} (Speed: {2:.2})".format(asn, asn_in_second, speed))
 
+            if asn == self._last_tick_asn:
+                log.warning("Maybe stuck, stuck counter {0}".format(self._stuck_counter))
+                if self._stuck_counter > 5:
+                    log.warning("Stuck for too long, abort simulation!")
+                    self._stopSimulation()
+                else:
+                    self._stuck_counter += 1
+            else:
+                self._stuck_counter = 0
+
             if asn_in_second > SimulatorHelper.SIMULATION_TIME:
-                log.info("Stop simulation!")
-                self._openVisualizerApp.close()
-                self._exportSimulationResult()
-                self._printAnalysisLog()
-                import os
-                import signal
-                os.kill(os.getpid(), signal.SIGTERM)
+                self._stopSimulation()
                 return
 
+            self._last_tick_asn = asn
+
         self._printAnalysisLog()
-        self._last_tick_asn = asn
+
         Timer(SimulatorHelper.TICK_INTER_SECOND, self._simulatorHelperTick).start()
 
     def _updateRootMoteState_notif(self, sender, signal, data):
@@ -194,6 +201,15 @@ class SimulatorHelper(eventBusClient.eventBusClient):
             ))
 
         log.debug("==================================================")
+
+    def _stopSimulation(self):
+        log.info("Stop simulation!")
+        self._openVisualizerApp.close()
+        self._exportSimulationResult()
+        self._printAnalysisLog()
+        import os
+        import signal
+        os.kill(os.getpid(), signal.SIGTERM)
 
     def _exportSimulationResult(self):
         log.debug(1)
