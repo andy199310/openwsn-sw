@@ -13,6 +13,8 @@ import os
 import logging
 import json
 
+import math
+
 from openvisualizer.OVtracer import OVtracer
 
 log = logging.getLogger('openVisualizerApp')
@@ -41,7 +43,7 @@ class OpenVisualizerApp(object):
     top-level functionality for several UI clients.
     '''
     
-    def __init__(self,confdir,datadir,logdir,simulatorMode,numMotes,trace,debug,usePageZero,simTopology,iotlabmotes, pathTopo, roverMode):
+    def __init__(self,confdir,datadir,logdir,simulatorMode,numMotes,trace,debug,usePageZero,simTopology,iotlabmotes, pathTopo, roverMode, gPDRr):
 
         # store params
         self.confdir              = confdir
@@ -55,6 +57,7 @@ class OpenVisualizerApp(object):
         self.iotlabmotes          = iotlabmotes
         self.pathTopo             = pathTopo
         self.roverMode            = roverMode
+        self.gPDRr                = gPDRr
 
         # local variables
         self.eventBusMonitor      = eventBusMonitor.eventBusMonitor()
@@ -63,8 +66,8 @@ class OpenVisualizerApp(object):
         self.topology             = topology.topology()
         self.udpInject            = UDPInject.UDPInject()
 
-        self.networkManager       = networkManager.NetworkManager()
-        self.scheduleDistributor  = scheduleDistributor.ScheduleDistributor()
+        self.networkManager       = networkManager.NetworkManager(self)
+        self.scheduleDistributor  = scheduleDistributor.ScheduleDistributor(self)
         if simulatorMode:
             self.simulatorHelper  = simulatorHelper.SimulatorHelper(self)
 
@@ -164,7 +167,11 @@ class OpenVisualizerApp(object):
             for co in connect:
                 fromMote = int(co['fromMote'])
                 toMote = int(co['toMote'])
-                pdr = float(co['pdr'])
+                # if we got pdr from command line, use it!
+                if self.gPDRr is not None:
+                    pdr = math.sqrt(self.gPDRr)
+                else:
+                    pdr = float(co['pdr'])
                 self.simengine.propagation.createConnection(fromMote,toMote)
                 self.simengine.propagation.updateConnection(fromMote,toMote,pdr)
             
@@ -362,7 +369,8 @@ def main(parser=None, roverMode=False):
         simTopology     = argspace.simTopology,
         iotlabmotes     = argspace.iotlabmotes,
         pathTopo        = argspace.pathTopo,
-        roverMode       = roverMode
+        roverMode       = roverMode,
+        gPDRr           = argspace.gPDRr,
     )
 
 def _addParserArgs(parser):

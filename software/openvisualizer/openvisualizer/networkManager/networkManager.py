@@ -21,7 +21,7 @@ class NetworkManager(eventBusClient.eventBusClient):
 
     CREPORT_ASN_PAYLOAD_LENGTH = 27
 
-    def __init__(self):
+    def __init__(self, openVisualizerApp):
         # log
         log.info("Network Manager started!")
 
@@ -46,6 +46,7 @@ class NetworkManager(eventBusClient.eventBusClient):
         )
 
         # local variables
+        self._openVisualizerApp = openVisualizerApp
         self.max_assignable_slot = 80
         self.start_offset = 20
         self.max_assignable_channel = 16
@@ -105,7 +106,9 @@ class NetworkManager(eventBusClient.eventBusClient):
                 local_queue[mote] = 1
             # succeed, results = tasaSimpleAlgorithms(motes, local_queue, edges, self.max_assignable_slot, self.start_offset, self.max_assignable_channel)
 
-            succeed, results = tasa_pdr_algorithms(motes, local_queue, edges, self.max_assignable_slot, self.start_offset, self.max_assignable_channel)
+            pdr = self._openVisualizerApp.gPDRr
+
+            succeed, results = tasa_pdr_algorithms(motes, local_queue, edges, self.max_assignable_slot, self.start_offset, self.max_assignable_channel, pdr)
 
             if not succeed:
                 log.critical("Scheduler cannot assign all edge!")
@@ -142,15 +145,17 @@ class NetworkManager(eventBusClient.eventBusClient):
         self.dag_root_moteState = data['rootMoteState']
         return
 
-    def _findHopInTree(self, mote):
+    def _findHopInTree(self, mote, level):
+        if level > 100:
+            return 0
         for edge in self.edges:
             if edge['u'] == mote:
-                return self._findHopInTree(edge['v']) + 1
+                return self._findHopInTree(edge['v'], level + 1) + 1
         return 0
 
     def _checkTopology(self):
         for mote in self.motes:
-            if self._findHopInTree(mote) is 0:
+            if self._findHopInTree(mote, 0) is 0:
                 if mote[-2:] == '01' or mote[-2:] == '88':  # TODO make it better
                     continue
                 else:

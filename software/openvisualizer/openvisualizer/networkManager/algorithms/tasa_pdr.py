@@ -5,9 +5,9 @@ log.setLevel(logging.ERROR)
 log.addHandler(logging.NullHandler())
 
 
-def tasa_pdr_algorithms(motes, local_queue, edges, max_assignable_slot, start_offset, max_assignable_channel):
+def tasa_pdr_algorithms(motes, local_queue, edges, max_assignable_slot, start_offset, max_assignable_channel, pdr):
 
-    pdr = 1
+    # pdr = 0.7
 
     input_motes = motes
     motes = {}

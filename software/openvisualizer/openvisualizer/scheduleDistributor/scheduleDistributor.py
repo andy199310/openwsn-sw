@@ -24,7 +24,7 @@ class ScheduleDistributor(eventBusClient.eventBusClient):
     CELL_TYPE_RX     = 1
     CELL_TYPE_REMOVE = 8
 
-    def __init__(self):
+    def __init__(self, openVisualizerApp):
         # log
         log.info("Schedule Distributor started!")
 
@@ -54,6 +54,7 @@ class ScheduleDistributor(eventBusClient.eventBusClient):
         )
 
         # local variables
+        self._openVisualizerApp = openVisualizerApp
         self.max_entry_per_packet = 2
         self.motes = None
         self.edges = None
