@@ -239,10 +239,11 @@ class SimulatorHelper(eventBusClient.eventBusClient):
 
     def _exportSimulationResult(self):
         self._createExportFolder()
+        self._appendExperimentResultToCSV()
         self._exportRawPacketLog()
         self._exportAnalysisLog()
         self._exportAnalysisResult()
-        self._appendExperimentResultToCSV()
+        self._exportScheduleTable()
         return
 
     def _createExportFolder(self):
@@ -288,6 +289,11 @@ class SimulatorHelper(eventBusClient.eventBusClient):
         with open(self._export_folder_name + 'result-analysisResult.json', 'w') as fp:
             json.dump(simulation_result, fp)
 
+    def _exportScheduleTable(self):
+        import json
+        with open(self._export_folder_name + 'result-scheduleTable.json', 'w') as fp:
+            json.dump(self._openVisualizerApp.scheduleDistributor.overAllScheduleTable, fp)
+
     def _appendExperimentResultToCSV(self):
         experiment_results = []
 
@@ -308,6 +314,10 @@ class SimulatorHelper(eventBusClient.eventBusClient):
 
         # cell count
         experiment_results.append(len(self._openVisualizerApp.scheduleDistributor.overAllScheduleTable))
+
+        # schedule length
+        slot_number_list = [e[2] for e in self._openVisualizerApp.scheduleDistributor.overAllScheduleTable]
+        experiment_results.append(max(slot_number_list) - min(slot_number_list))
 
         # =============== experiment results ========================
         result_motes = []
