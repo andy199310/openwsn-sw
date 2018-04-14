@@ -1,6 +1,11 @@
 import logging
+import os
 import struct
 from threading import Timer
+
+import time
+
+import errno
 
 from openvisualizer.moteState import moteState
 from openvisualizer.networkManager.networkManager import NetworkManager
@@ -18,7 +23,11 @@ class SimulatorHelper(eventBusClient.eventBusClient):
 
     SLOT_LENGTH = 15
 
+    SLOTFRAME_LENGTH = 101
+
     SIMULATION_TIME = 3600
+
+    EXPERIMENT_RESULT_START_TIME = 1200
 
 
     def __init__(self, openVisualizerApp):
@@ -50,6 +59,19 @@ class SimulatorHelper(eventBusClient.eventBusClient):
 
         self._packet_log = []
         self._analysis_packet = {}
+        self._mote_last_not_duplicate_entry = {}
+
+        self._experiment_schedule = "GTASA"
+        self._experiment_pdr_r = self._openVisualizerApp.gPDRr
+        self._experiment_topology = "topology-1"
+        self._experiment_start_time = int(time.time())
+
+        self._export_folder_name = "result_{0}_{1}_{2}_{3}/".format(
+            self._experiment_schedule,
+            self._experiment_pdr_r,
+            self._experiment_topology,
+            self._experiment_start_time
+        )
 
         self._last_tick_asn = 0
         self._stuck_counter = 0
@@ -163,15 +185,15 @@ class SimulatorHelper(eventBusClient.eventBusClient):
 
         # TODO check order
         # check duplicate
-        if mote_src in self._analysis_packet:
-            past_same_entry = [x for x in self._analysis_packet[mote_src]
-                               if x["packet_sequence"] is new_entry["packet_sequence"]]
-            if len(past_same_entry) > 0:
+        if mote_src in self._mote_last_not_duplicate_entry:
+            if self._mote_last_not_duplicate_entry[mote_src]['packet_sequence'] == new_entry["packet_sequence"]:
                 new_entry["duplicate"] = True
+            else:
+                pass
 
         # calculate miss packet and inter packet time
         if mote_src in self._analysis_packet:
-            last_entry = [x for x in self._analysis_packet[mote_src] if x["duplicate"] is False][-1]
+            last_entry = self._mote_last_not_duplicate_entry[mote_src]
             new_entry["packet_loss"] = (new_entry["packet_sequence"] - last_entry["packet_sequence"] - 1)
             new_entry["inter_packet_time"] = new_entry["end_asn"] - last_entry["end_asn"]
         else:
@@ -181,6 +203,7 @@ class SimulatorHelper(eventBusClient.eventBusClient):
             new_entry["inter_packet_time"] = None  # TODO what XD (link with _printAnalysisLog)
             new_entry["diff"] = 50  # if this is first packet, set to half of slotframe length
 
+        self._mote_last_not_duplicate_entry[mote_src] = new_entry
         self._analysis_packet[mote_src].append(new_entry)
 
     def _printAnalysisLog(self):
@@ -211,21 +234,33 @@ class SimulatorHelper(eventBusClient.eventBusClient):
         import signal
         os.kill(os.getpid(), signal.SIGTERM)
 
+    def _recheckDuplicatePacket(self):
+        pass
+
     def _exportSimulationResult(self):
-        log.debug(1)
+        self._createExportFolder()
         self._exportRawPacketLog()
         self._exportAnalysisLog()
         self._exportAnalysisResult()
+        self._appendExperimentResultToCSV()
         return
+
+    def _createExportFolder(self):
+        if not os.path.exists(os.path.dirname(self._export_folder_name)):
+            try:
+                os.makedirs(os.path.dirname(self._export_folder_name))
+            except OSError as exc:  # Guard against race condition
+                if exc.errno != errno.EEXIST:
+                    raise
 
     def _exportRawPacketLog(self):
         import json
-        with open('result-rawPacketLog.json', 'w') as fp:
+        with open(self._export_folder_name + 'result-rawPacketLog.json', 'w') as fp:
             json.dump(self._packet_log, fp)
 
     def _exportAnalysisLog(self):
         import json
-        with open('result-analysisLog.json', 'w') as fp:
+        with open(self._export_folder_name + 'result-analysisLog.json', 'w') as fp:
             json.dump(self._analysis_packet, fp)
 
     def _exportAnalysisResult(self):
@@ -250,5 +285,86 @@ class SimulatorHelper(eventBusClient.eventBusClient):
 
             simulation_result.append(result_entry)
 
-        with open('result-analysisResult.json', 'w') as fp:
+        with open(self._export_folder_name + 'result-analysisResult.json', 'w') as fp:
             json.dump(simulation_result, fp)
+
+    def _appendExperimentResultToCSV(self):
+        experiment_results = []
+
+        # experiment start time
+        experiment_results.append(self._experiment_start_time)
+
+        # schedule method
+        experiment_results.append(self._experiment_schedule)
+
+        # PDRr
+        experiment_results.append(self._openVisualizerApp.gPDRr)
+
+        # mote count
+        experiment_results.append(len(self._openVisualizerApp.networkManager.motes))
+
+        # topology
+        experiment_results.append(self._experiment_topology)
+
+        # cell count
+        experiment_results.append(len(self._openVisualizerApp.scheduleDistributor.overAllScheduleTable))
+
+        # =============== experiment results ========================
+        result_motes = []
+        max_hop_count = 0
+        max_hop_mote_list = []
+        result_start_asn = SimulatorHelper.EXPERIMENT_RESULT_START_TIME * 1000 / SimulatorHelper.SLOT_LENGTH
+        result_collection = []
+
+        for mote, entries in self._analysis_packet.iteritems():
+            # get mote's hop count
+            hop = self._openVisualizerApp.networkManager._findHopInTree(mote[-19:], 0)
+            result_motes.append({
+                'mote': mote,
+                'hop': hop
+            })
+            if hop > max_hop_count:
+                max_hop_count = hop
+                max_hop_mote_list = []
+            if hop == max_hop_count:
+                max_hop_mote_list.append(mote)
+
+            # filter result data
+            packet_entries_for_result = [e for e in entries
+                                         if e['end_asn'] > result_start_asn
+                                         and e["duplicate"] is False
+                                         and e['packet_loss'] >= 0]
+            result_collection.extend(packet_entries_for_result)
+
+        result_packet_count = len(result_collection)
+        log.debug("max hop count list:")
+        log.debug(max_hop_mote_list)
+        max_hop_collection = [e for e in result_collection if e['mote'] in max_hop_mote_list]
+        max_hop_collection_count = len(max_hop_collection)
+
+        # total packet count
+        experiment_results.append(result_packet_count)
+
+        # average packet delay
+        experiment_results.append(sum(e['diff'] for e in result_collection) / result_packet_count)
+
+        # max hop count
+        experiment_results.append(max_hop_count)
+
+        # max hop average packet delay
+        experiment_results.append(sum(e['diff'] for e in max_hop_collection) / max_hop_collection_count)
+
+        # max packet delay
+        experiment_results.append(max([x['diff'] for x in result_collection]))
+
+        # in slotframe rate
+        experiment_results.append(float(len([e['diff'] for e in result_collection if e['diff'] < SimulatorHelper.SLOTFRAME_LENGTH])) / result_packet_count)
+        log.debug(experiment_results)
+        # per level average packet delay
+        # TODO
+
+        experiment_result_str = ','.join(['"' + str(e) + '"' for e in experiment_results])
+        experiment_result_str += '\n'
+        log.debug(experiment_result_str)
+        with open("experiment_results.csv", "a") as csv_file:
+            csv_file.write(experiment_result_str)
