@@ -66,11 +66,11 @@ class SimulatorHelper(eventBusClient.eventBusClient):
         self._experiment_topology = "topology-1"
         self._experiment_start_time = int(time.time())
 
-        self._export_folder_name = "result_{0}_{1}_{2}_{3}/".format(
+        self._export_folder_name = "results/result_{0}_{1}_{2}_{3}/".format(
+            self._experiment_start_time,
             self._experiment_schedule,
             self._experiment_pdr_r,
             self._experiment_topology,
-            self._experiment_start_time
         )
 
         self._last_tick_asn = 0
