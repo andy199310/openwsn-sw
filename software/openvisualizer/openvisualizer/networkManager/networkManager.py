@@ -21,6 +21,8 @@ class NetworkManager(eventBusClient.eventBusClient):
 
     CREPORT_ASN_PAYLOAD_LENGTH = 27
 
+    SCHEDULE_IN_SLOTFRAME_SUCCESS_RATE = 0.9
+
     def __init__(self, openVisualizerApp):
         # log
         log.info("Network Manager started!")
@@ -47,6 +49,10 @@ class NetworkManager(eventBusClient.eventBusClient):
 
         # local variables
         self._openVisualizerApp = openVisualizerApp
+        if self._openVisualizerApp.gScheduler is None:
+            self._scheduler = "TASA"
+        else:
+            self._scheduler = self._openVisualizerApp.gScheduler
         self.max_assignable_slot = 80
         self.start_offset = 20
         self.max_assignable_channel = 16
@@ -104,7 +110,9 @@ class NetworkManager(eventBusClient.eventBusClient):
             local_queue = {}
             for mote in motes:
                 local_queue[mote] = 1
-            succeed, results = tasaSimpleAlgorithms(motes, local_queue, edges, self.max_assignable_slot, self.start_offset, self.max_assignable_channel)
+
+            succeed = False
+            results = []
 
             # TODO better PDR
             if self._openVisualizerApp.gPDRr is None:
@@ -112,22 +120,32 @@ class NetworkManager(eventBusClient.eventBusClient):
             else:
                 pdr = self._openVisualizerApp.gPDRr
 
-            # slot-based
-            repeat_time = 1
-            error_rate = 1 - pdr
-            while error_rate > 0.1:
-                repeat_time += 1
-                error_rate *= (1-pdr)
+            if self._scheduler == "TASA":
+                succeed, results = tasaSimpleAlgorithms(motes, local_queue, edges, self.max_assignable_slot, self.start_offset, self.max_assignable_channel)
 
-            new_results = []
-            if True:        # slot-based
+            elif self._scheduler == "SB-TASA":
+                succeed, results = tasaSimpleAlgorithms(motes, local_queue, edges, self.max_assignable_slot, self.start_offset, self.max_assignable_channel)
+                repeat_time = 1
+                error_rate = 1 - pdr
+                while error_rate > 1 - NetworkManager.SCHEDULE_IN_SLOTFRAME_SUCCESS_RATE:
+                    repeat_time += 1
+                    error_rate *= (1 - pdr)
+                new_results = []
                 for item in results:
                     base_slot_offset = item[2] - self.start_offset
                     for i in range(0, repeat_time):
                         new_slot_offset = self.start_offset + base_slot_offset * repeat_time + i
                         new_results.append([item[0], item[1], new_slot_offset, item[3]])
+                results = new_results
 
-            if False:       # frame-based
+            elif self._scheduler == "FB-TASA":
+                succeed, results = tasaSimpleAlgorithms(motes, local_queue, edges, self.max_assignable_slot, self.start_offset, self.max_assignable_channel)
+                repeat_time = 1
+                error_rate = 1 - pdr
+                while error_rate > 1 - NetworkManager.SCHEDULE_IN_SLOTFRAME_SUCCESS_RATE:
+                    repeat_time += 1
+                    error_rate *= (1 - pdr)
+                new_results = []
                 slot_number_list = [e[2] for e in results]
                 schedule_length = max(slot_number_list) - min(slot_number_list) + 1
                 for item in results:
@@ -136,8 +154,13 @@ class NetworkManager(eventBusClient.eventBusClient):
                         new_slot_offset = self.start_offset + schedule_length * i + base_slot_offset
                         new_results.append([item[0], item[1], new_slot_offset, item[3]])
 
+            elif self._scheduler == "GTASA":
+                succeed, results = tasa_pdr_algorithms(motes, local_queue, edges, self.max_assignable_slot, self.start_offset, self.max_assignable_channel, pdr)
 
-            results = new_results
+            else:
+                log.error("Cannot find scheduler {0}".format(self._scheduler))
+
+            # results = new_results
             # succeed, results = tasa_pdr_algorithms(motes, local_queue, edges, self.max_assignable_slot, self.start_offset, self.max_assignable_channel, pdr)
 
             if not succeed:

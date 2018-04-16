@@ -61,9 +61,9 @@ class SimulatorHelper(eventBusClient.eventBusClient):
         self._analysis_packet = {}
         self._mote_last_not_duplicate_entry = {}
 
-        self._experiment_schedule = "GTASA"
+        self._experiment_schedule = self._openVisualizerApp.gScheduler
         self._experiment_pdr_r = self._openVisualizerApp.gPDRr
-        self._experiment_topology = "topology-1"
+        self._experiment_topology = "topology-2"
         self._experiment_start_time = int(time.time())
 
         self._export_folder_name = "results/result_{0}_{1}_{2}_{3}/".format(

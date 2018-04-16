@@ -198,6 +198,12 @@ AddOption('--gPDRr',
     action    = 'store')
 runnerEnv['GPDRR'] = GetOption('gPDRr')
 
+AddOption('--gScheduler',
+    dest      = 'gScheduler',
+    type      = 'string',
+    action    = 'store')
+runnerEnv['GSCHEDULER'] = GetOption('gScheduler')
+
 #============================ SCons targets ===================================
 
 #===== copy-simfw

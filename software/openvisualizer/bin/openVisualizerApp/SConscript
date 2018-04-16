@@ -69,6 +69,8 @@ def uiRunner(target, source, env):
         argList.append('--rover')
     if env['GPDRR']:
         argList.append('--gPDRr={0}'.format(env['GPDRR']))
+    if env['GSCHEDULER']:
+        argList.append('--gScheduler={0}'.format(env['GSCHEDULER']))
     print(argList)
     result = 0
     try:

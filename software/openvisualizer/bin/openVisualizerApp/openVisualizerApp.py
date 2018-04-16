@@ -43,7 +43,7 @@ class OpenVisualizerApp(object):
     top-level functionality for several UI clients.
     '''
     
-    def __init__(self,confdir,datadir,logdir,simulatorMode,numMotes,trace,debug,usePageZero,simTopology,iotlabmotes, pathTopo, roverMode, gPDRr):
+    def __init__(self,confdir,datadir,logdir,simulatorMode,numMotes,trace,debug,usePageZero,simTopology,iotlabmotes, pathTopo, roverMode, gPDRr, gScheduler):
 
         # store params
         self.confdir              = confdir
@@ -58,6 +58,7 @@ class OpenVisualizerApp(object):
         self.pathTopo             = pathTopo
         self.roverMode            = roverMode
         self.gPDRr                = gPDRr
+        self.gScheduler           = gScheduler
 
         # local variables
         self.eventBusMonitor      = eventBusMonitor.eventBusMonitor()
@@ -371,6 +372,7 @@ def main(parser=None, roverMode=False):
         pathTopo        = argspace.pathTopo,
         roverMode       = roverMode,
         gPDRr           = argspace.gPDRr,
+        gScheduler      = argspace.gScheduler,
     )
 
 def _addParserArgs(parser):
@@ -434,6 +436,12 @@ def _addParserArgs(parser):
         default=None,
         type=float,
         help='Simulation round trip PDR'
+    )
+    parser.add_argument('-gscheduler', '--gScheduler',
+        dest='gScheduler',
+        default=None,
+        type=str,
+        help='Simulation scheduler'
     )
 
 
