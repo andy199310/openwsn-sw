@@ -153,6 +153,7 @@ class NetworkManager(eventBusClient.eventBusClient):
                     for i in range(0, repeat_time):
                         new_slot_offset = self.start_offset + schedule_length * i + base_slot_offset
                         new_results.append([item[0], item[1], new_slot_offset, item[3]])
+                results = new_results
 
             elif self._scheduler == "GTASA":
                 succeed, results = tasa_pdr_algorithms(motes, local_queue, edges, self.max_assignable_slot, self.start_offset, self.max_assignable_channel, pdr)

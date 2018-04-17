@@ -108,7 +108,7 @@ def tasa_pdr_algorithms(motes, local_queue, edges, max_assignable_slot, start_of
         parent_mote['local_queue'] = parent_mote['local_queue'] + local_queue_diff
         parent_mote['busy'] = True
 
-        if target_mote['local_queue'] < 0.1 and target_mote['global_queue'] < 0.1:
+        if target_mote['local_queue'] < 0.05 and target_mote['global_queue'] < 0.05:
             target_mote['done'] = True
             # remove local queue from all parent path
             target_parent = motes[target_mote['parent']]
