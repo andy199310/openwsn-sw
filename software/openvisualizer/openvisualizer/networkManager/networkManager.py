@@ -21,7 +21,7 @@ class NetworkManager(eventBusClient.eventBusClient):
 
     CREPORT_ASN_PAYLOAD_LENGTH = 27
 
-    SCHEDULE_IN_SLOTFRAME_SUCCESS_RATE = 0.9
+    SCHEDULE_IN_SLOTFRAME_SUCCESS_RATE = 0.95
 
     def __init__(self, openVisualizerApp):
         # log
