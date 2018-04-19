@@ -250,6 +250,12 @@ class ScheduleDistributor(eventBusClient.eventBusClient):
             )
             return
         else:
+
+            # try send to mote by serial port
+            if True:
+                if self._trySendScheduleToMoteBySerial(mote_address, payload):
+                    return
+
             try:
 
                 log.debug("GO mote")
@@ -270,6 +276,21 @@ class ScheduleDistributor(eventBusClient.eventBusClient):
                 log.critical("Unexpected error:{0}".format(sys.exc_info()[1]))
 
         return
+
+    def _trySendScheduleToMoteBySerial(self, mote_address, payload):
+        for mote_state in self._openVisualizerApp.moteStates:
+            if str(mote_state.state[mote_state.ST_IDMANAGER].get16bAddr()[-1]) == str(mote_address[-1]):
+                log.debug("Send to {0} by serial".format(mote_address))
+                self.dispatch(
+                    signal='cmdToMote',
+                    data={
+                        'serialPort': mote_state.moteConnector.serialport,
+                        'action': mote_state.ADD_SCHEDULE,
+                        'payload': payload
+                    },
+                )
+                return True
+        return False
 
     def _updateRootMoteState_notif(self, sender, signal, data):
         log.debug("Get update root")
