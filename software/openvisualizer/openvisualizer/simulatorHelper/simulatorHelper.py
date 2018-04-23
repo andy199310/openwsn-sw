@@ -360,7 +360,7 @@ class SimulatorHelper(eventBusClient.eventBusClient):
         # total packet count
         experiment_results.append(result_packet_count)
 
-        if result_packet_count:
+        if result_packet_count == 0:
             log.warning("result packet count is zero")
         else:
 
