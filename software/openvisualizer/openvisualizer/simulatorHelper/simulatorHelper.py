@@ -23,7 +23,7 @@ class SimulatorHelper(eventBusClient.eventBusClient):
 
     SLOT_LENGTH = 15
 
-    SLOTFRAME_LENGTH = 101
+    SLOTFRAME_LENGTH = 197
 
     SIMULATION_TIME = 3600
 
@@ -227,12 +227,15 @@ class SimulatorHelper(eventBusClient.eventBusClient):
 
     def _stopSimulation(self):
         log.info("Stop simulation!")
-        self._openVisualizerApp.close()
-        self._exportSimulationResult()
-        self._printAnalysisLog()
-        import os
-        import signal
-        os.kill(os.getpid(), signal.SIGTERM)
+        try:
+            self._openVisualizerApp.close()
+            self._exportSimulationResult()
+            self._printAnalysisLog()
+            import os
+            import signal
+            os.kill(os.getpid(), signal.SIGTERM)
+        except Exception as e:
+            log.exception(e)
 
     def _recheckDuplicatePacket(self):
         pass
@@ -368,7 +371,7 @@ class SimulatorHelper(eventBusClient.eventBusClient):
         experiment_results.append(max([x['diff'] for x in result_collection]))
 
         # in slotframe rate
-        experiment_results.append(float(len([e['diff'] for e in result_collection if e['diff'] < SimulatorHelper.SLOTFRAME_LENGTH])) / result_packet_count)
+        experiment_results.append(float(len([e['diff'] for e in result_collection if e['diff'] <= SimulatorHelper.SLOTFRAME_LENGTH])) / result_packet_count)
         log.debug(experiment_results)
         # per level average packet delay
         # TODO
