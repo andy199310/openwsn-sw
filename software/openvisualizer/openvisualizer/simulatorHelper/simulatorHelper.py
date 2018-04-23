@@ -25,6 +25,8 @@ class SimulatorHelper(eventBusClient.eventBusClient):
 
     SLOTFRAME_LENGTH = 197
 
+    IN_SLOTFRAME_RATE_GAP = 5
+
     SIMULATION_TIME = 3600
 
     EXPERIMENT_RESULT_START_TIME = 1200
@@ -358,23 +360,27 @@ class SimulatorHelper(eventBusClient.eventBusClient):
         # total packet count
         experiment_results.append(result_packet_count)
 
-        # average packet delay
-        experiment_results.append(sum(e['diff'] for e in result_collection) / result_packet_count)
+        if result_packet_count:
+            log.warning("result packet count is zero")
+        else:
 
-        # max hop count
-        experiment_results.append(max_hop_count)
+            # average packet delay
+            experiment_results.append(sum(e['diff'] for e in result_collection) / result_packet_count)
 
-        # max hop average packet delay
-        experiment_results.append(sum(e['diff'] for e in max_hop_collection) / max_hop_collection_count)
+            # max hop count
+            experiment_results.append(max_hop_count)
 
-        # max packet delay
-        experiment_results.append(max([x['diff'] for x in result_collection]))
+            # max hop average packet delay
+            experiment_results.append(sum(e['diff'] for e in max_hop_collection) / max_hop_collection_count)
 
-        # in slotframe rate
-        experiment_results.append(float(len([e['diff'] for e in result_collection if e['diff'] <= SimulatorHelper.SLOTFRAME_LENGTH])) / result_packet_count)
-        log.debug(experiment_results)
-        # per level average packet delay
-        # TODO
+            # max packet delay
+            experiment_results.append(max([x['diff'] for x in result_collection]))
+
+            # in slotframe rate
+            experiment_results.append(float(len([e['diff'] for e in result_collection if e['diff'] <= SimulatorHelper.SLOTFRAME_LENGTH + SimulatorHelper.IN_SLOTFRAME_RATE_GAP])) / result_packet_count)
+            log.debug(experiment_results)
+            # per level average packet delay
+            # TODO
 
         experiment_result_str = ','.join(['"' + str(e) + '"' for e in experiment_results])
         experiment_result_str += '\n'
