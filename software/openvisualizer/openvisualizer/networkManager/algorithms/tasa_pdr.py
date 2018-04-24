@@ -121,14 +121,4 @@ def tasa_pdr_algorithms(motes, local_queue, edges, max_assignable_slot, start_of
         got_new_cell = True
         now_channel_offset += 1
 
-    # for network manager
-    schedule_output = []
-    for schedule_item in schedule_result:
-        schedule_output.append([
-            schedule_item["from"],
-            schedule_item["to"],
-            schedule_item["slotOffset"],
-            schedule_item["channelOffset"],
-        ])
-
-    return True, schedule_output
+    return True, schedule_result

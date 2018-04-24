@@ -157,6 +157,15 @@ class NetworkManager(eventBusClient.eventBusClient):
 
             elif self._scheduler == "GTASA":
                 succeed, results = tasa_pdr_algorithms(motes, local_queue, edges, self.max_assignable_slot, self.start_offset, self.max_assignable_channel, pdr)
+                schedule_output = []
+                for schedule_item in results:
+                    schedule_output.append([
+                        schedule_item["from"],
+                        schedule_item["to"],
+                        schedule_item["slotOffset"],
+                        schedule_item["channelOffset"],
+                    ])
+                results = schedule_output
 
             else:
                 log.error("Cannot find scheduler {0}".format(self._scheduler))
