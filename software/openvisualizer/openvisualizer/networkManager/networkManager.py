@@ -209,7 +209,7 @@ class NetworkManager(eventBusClient.eventBusClient):
 
     def _checkTopology(self):
         for mote in self.motes:
-            if self._findHopInTree(mote, 0) is 0:
+            if self._findHopInTree(mote, 0) is 0 or self._findHopInTree(mote, 0) > 95:
                 if mote[-2:] == '01' or mote[-2:] == '88':  # TODO make it better
                     continue
                 else:
