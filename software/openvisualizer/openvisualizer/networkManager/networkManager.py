@@ -9,6 +9,7 @@ import operator
 from openvisualizer.moteState import moteState
 from openvisualizer.networkManager.algorithms.tasa import tasaSimpleAlgorithms
 from openvisualizer.networkManager.algorithms.tasa_pdr import tasa_pdr_algorithms
+from openvisualizer.networkManager.algorithms.tasa_pdr_inc import tasa_pdr_inc_algorithms
 
 log = logging.getLogger('networkManager')
 log.setLevel(logging.ERROR)
@@ -167,6 +168,18 @@ class NetworkManager(eventBusClient.eventBusClient):
                     ])
                 results = schedule_output
 
+            elif self._scheduler == "GTASA-INC":
+                succeed, results = tasa_pdr_inc_algorithms(motes, local_queue, edges, self.max_assignable_slot, self.start_offset, self.max_assignable_channel, pdr)
+                schedule_output = []
+                for schedule_item in results:
+                    schedule_output.append([
+                        schedule_item["from"],
+                        schedule_item["to"],
+                        schedule_item["slotOffset"],
+                        schedule_item["channelOffset"],
+                    ])
+                results = schedule_output
+
             else:
                 log.error("Cannot find scheduler {0}".format(self._scheduler))
 
@@ -175,6 +188,8 @@ class NetworkManager(eventBusClient.eventBusClient):
 
             if not succeed:
                 log.critical("Scheduler cannot assign all edge!")
+                self.schedule_running = False
+                return
             # results = self._simplestAlgorithms(motes, edges, self.max_assignable_slot, self.start_offset, self.max_assignable_channel)
             log.debug("End algorithm")
 
