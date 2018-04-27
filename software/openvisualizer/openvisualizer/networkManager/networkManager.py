@@ -168,6 +168,18 @@ class NetworkManager(eventBusClient.eventBusClient):
                     ])
                 results = schedule_output
 
+            elif self._scheduler == "GTASA-LB":
+                succeed, results = tasa_pdr_algorithms(motes, local_queue, edges, self.max_assignable_slot, self.start_offset, self.max_assignable_channel, pdr)
+                schedule_output = []
+                for schedule_item in results:
+                    schedule_output.append([
+                        schedule_item["from"],
+                        schedule_item["to"],
+                        schedule_item["slotOffset"],
+                        schedule_item["channelOffset"],
+                    ])
+                results = schedule_output
+
             elif self._scheduler == "GTASA-INC":
                 succeed, results = tasa_pdr_inc_algorithms(motes, local_queue, edges, self.max_assignable_slot, self.start_offset, self.max_assignable_channel, pdr)
                 schedule_output = []
