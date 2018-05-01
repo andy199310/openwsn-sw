@@ -4,19 +4,29 @@ from openvisualizer.networkManager.algorithms.tasa_pdr import tasa_pdr_algorithm
 
 old_schedule_result = []
 old_link_usage = {}
+first_time_run = True
 
 log = logging.getLogger('scheduleAlgorithms')
 log.setLevel(logging.ERROR)
 log.addHandler(logging.NullHandler())
 
 
-def tasa_pdr_inc_algorithms(motes, local_queue, edges, max_assignable_slot, start_offset, max_assignable_channel, pdr):
+def tasa_pdr_inc_algorithms(motes, local_queue, edges, max_assignable_slot, start_offset, max_assignable_channel, pdr, app):
     global old_link_usage
     global old_schedule_result
+    global first_time_run
 
-    if len(edges) < 4:
+    if len(edges) < 6:
         log.warning("Stop by TASA_pdr_INC! not complete!")
         return False, []
+    else:
+        # set 8, 9 link up
+        if first_time_run:
+            app.simengine.propagation.createConnection(4, 8)
+            app.simengine.propagation.updateConnection(4, 8, pdr)
+            app.simengine.propagation.createConnection(5, 9)
+            app.simengine.propagation.updateConnection(5, 9, pdr)
+
 
     # use new topology to get new schedule table
     succeed, new_schedule_table = tasa_pdr_algorithms(motes, local_queue, edges, max_assignable_slot, start_offset, max_assignable_channel, pdr)
@@ -51,6 +61,8 @@ def tasa_pdr_inc_algorithms(motes, local_queue, edges, max_assignable_slot, star
     for key, use_count in new_link_usage.items():
 
         if key in old_link_usage:
+            log.debug("Old")
+            log.debug("N: {0}, O: {1}".format(use_count, old_link_usage[key]))
             # the link is exist in old schedule table
             if use_count > old_link_usage[key]:
                 # need more link
@@ -63,6 +75,7 @@ def tasa_pdr_inc_algorithms(motes, local_queue, edges, max_assignable_slot, star
                 pass
 
         if key not in old_link_usage:
+            log.debug("New")
             # new link, add all link before RX's first TX
             transmitter, receiver = key.split('_')
             add_succeed = _add_new_link_to_schedule(transmitter, receiver, use_count, start_offset, max_assignable_slot)
@@ -147,7 +160,7 @@ def _add_exist_link_to_schedule(link_transmitter, link_receiver, link_count, sta
     global old_schedule_result
 
     # get link receiver's last TX
-    filter_entry = [e for e in old_schedule_result if e['from'] == link_receiver]
+    filter_entry = [e for e in old_schedule_result if e['from'] == link_transmitter]
     last_tx_offset = max([e['slotOffset'] for e in filter_entry])
 
     for current_slot_offset in range(last_tx_offset, start_offset + max_assignable_slot, 1):
