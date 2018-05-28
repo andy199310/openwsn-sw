@@ -62,6 +62,7 @@ class ScheduleDistributor(eventBusClient.eventBusClient):
         self.motesScheduleTable = {}
         self.pastMotesScheduleTable = {}
         self.dag_root_moteState = None
+        self.schedule_packet_count = 0
 
 
     # ======================== public ==========================================
@@ -77,6 +78,7 @@ class ScheduleDistributor(eventBusClient.eventBusClient):
     def _scheduleChanged_notif(self, sender, signal, data):
         log.info("Get schedule changed")
         self.overAllScheduleTable = data[0]
+        self.schedule_packet_count = 0
 
         if log.isEnabledFor(logging.DEBUG):
             self._printOverAllScheduleTable()
@@ -193,6 +195,9 @@ class ScheduleDistributor(eventBusClient.eventBusClient):
             for i in range(0, len(different_entry_list), each_packet_entry_length):
                 current_packet_entry_list = different_entry_list[i:i+each_packet_entry_length]
                 log.info("Sequence {0:2} have {1:2} entry to send".format((i/each_packet_entry_length)+1, len(current_packet_entry_list)))
+                if len(current_packet_entry_list) <= 0:
+                    continue
+                self.schedule_packet_count += 1
                 payload = self._assemblePayloadFromEntryList(mote_id, common_length, current_packet_entry_list)
                 try:
                     self._sendPayloadToMote(mote_id, payload)
@@ -207,6 +212,8 @@ class ScheduleDistributor(eventBusClient.eventBusClient):
 
             log.info("Done send to {0:4}".format(mote_id))
             log.info("====================================")
+        log.info("All Done!!!")
+        log.info("Packet Count: {0}.".format(self.schedule_packet_count))
 
     def _assemblePayloadFromEntryList(self, mote_id, common_length, entry_list):
         payload = list()
