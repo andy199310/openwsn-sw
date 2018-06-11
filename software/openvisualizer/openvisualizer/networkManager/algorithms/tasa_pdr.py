@@ -1,4 +1,6 @@
+import json
 import logging
+import urllib
 
 log = logging.getLogger('scheduleAlgorithms')
 log.setLevel(logging.ERROR)
@@ -8,6 +10,11 @@ log.addHandler(logging.NullHandler())
 def tasa_pdr_algorithms(motes, local_queue, edges, max_assignable_slot, start_offset, max_assignable_channel, pdr):
 
     # pdr = 0.7
+    mote_default_pdr = 0.8
+
+    url = "http://127.0.0.1/pdr.php"
+    response = urllib.urlopen(url)
+    mote_pdr_list = json.loads(response.read())
 
     input_motes = motes
     motes = {}
@@ -20,12 +27,17 @@ def tasa_pdr_algorithms(motes, local_queue, edges, max_assignable_slot, start_of
                 parent = edge["v"]
                 break
 
+        mote_pdr = mote_default_pdr
+        log.debug(mote)
+        if mote in mote_pdr_list:
+            mote_pdr = mote_pdr_list[mote]
+
         motes[mote] = {
             "id": mote,
             "parent": parent,
             "done": False,
             "busy": False,
-            "pdr": pdr,
+            "pdr": mote_pdr,
             "local_queue": local_queue[mote],
             "global_queue": local_queue[mote]
         }

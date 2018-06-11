@@ -498,6 +498,7 @@ class OpenVisualizerWeb(eventBusClient.eventBusClient,Cmd):
     def _networkManagerRecalculate(self):
         self.app.networkManager.schedule_running = False
         self.app.topology.recalculate()
+        self.app.scheduleDistributor.pastMotesScheduleTable = {}
 
 
         return {'status': 'success'}

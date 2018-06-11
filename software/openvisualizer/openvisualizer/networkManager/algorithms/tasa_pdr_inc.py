@@ -1,6 +1,7 @@
 import logging
 
 from openvisualizer.networkManager.algorithms.tasa_pdr import tasa_pdr_algorithms
+from openvisualizer.networkManager.algorithms.tasa_pdr_lb import tasa_pdr_lb_algorithms
 
 old_schedule_result = []
 old_link_usage = {}
@@ -16,20 +17,21 @@ def tasa_pdr_inc_algorithms(motes, local_queue, edges, max_assignable_slot, star
     global old_schedule_result
     global first_time_run
 
-    if len(edges) < 6:
+    if len(edges) < 11:
         log.warning("Stop by TASA_pdr_INC! not complete!")
         return False, []
     else:
+        pass
         # set 8, 9 link up
-        if first_time_run:
-            app.simengine.propagation.createConnection(4, 8)
-            app.simengine.propagation.updateConnection(4, 8, pdr)
-            app.simengine.propagation.createConnection(5, 9)
-            app.simengine.propagation.updateConnection(5, 9, pdr)
+        # if first_time_run:
+        #     app.simengine.propagation.createConnection(4, 8)
+        #     app.simengine.propagation.updateConnection(4, 8, pdr)
+        #     app.simengine.propagation.createConnection(5, 9)
+        #     app.simengine.propagation.updateConnection(5, 9, pdr)
 
 
     # use new topology to get new schedule table
-    succeed, new_schedule_table = tasa_pdr_algorithms(motes, local_queue, edges, max_assignable_slot, start_offset, max_assignable_channel, pdr)
+    succeed, new_schedule_table = tasa_pdr_lb_algorithms(motes, local_queue, edges, max_assignable_slot, start_offset, max_assignable_channel, pdr)
 
     # first time schedule
     if len(old_schedule_result) == 0:

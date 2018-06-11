@@ -51,10 +51,10 @@ class NetworkManager(eventBusClient.eventBusClient):
         # local variables
         self._openVisualizerApp = openVisualizerApp
         if self._openVisualizerApp.gScheduler is None:
-            self._scheduler = "TASA"
+            self._scheduler = "GTASA-LB"
         else:
             self._scheduler = self._openVisualizerApp.gScheduler
-        self.max_assignable_slot = 80
+        self.max_assignable_slot = 170
         self.start_offset = 20
         self.max_assignable_channel = 16
         self.lastNetworkUpdateCounter = 0
@@ -206,8 +206,8 @@ class NetworkManager(eventBusClient.eventBusClient):
             log.debug("End algorithm")
 
             # make offset
-            for item in results:
-                item[2] = (item[2] - self.start_offset) * 2 + self.start_offset
+            # for item in results:
+            #     item[2] = (item[2] - self.start_offset) * 2 + self.start_offset
 
             log.debug("| From |  To  | Slot | Chan |")
             for item in results:

@@ -1,4 +1,6 @@
+import json
 import logging
+import urllib
 
 log = logging.getLogger('scheduleAlgorithms')
 log.setLevel(logging.ERROR)
@@ -8,6 +10,12 @@ log.addHandler(logging.NullHandler())
 def tasa_pdr_lb_algorithms(motes, local_queue, edges, max_assignable_slot, start_offset, max_assignable_channel, pdr):
 
     # pdr = 0.7
+
+    mote_default_pdr = 0.8
+
+    url = "http://127.0.0.1/pdr.php"
+    response = urllib.urlopen(url)
+    mote_pdr_list = json.loads(response.read())
 
     input_motes = motes
     motes = {}
@@ -20,15 +28,39 @@ def tasa_pdr_lb_algorithms(motes, local_queue, edges, max_assignable_slot, start
                 parent = edge["v"]
                 break
 
+        mote_pdr = mote_default_pdr
+        if mote in mote_pdr_list:
+            mote_pdr = mote_pdr_list[mote]
+
         motes[mote] = {
             "id": mote,
             "parent": parent,
             "done": False,
             "busy": False,
-            "pdr": pdr,
+            "pdr": mote_pdr,
             "local_queue": local_queue[mote],
             "global_queue": local_queue[mote]
         }
+
+        # t_mote_id = str(mote[-1])
+        # if t_mote_id == '1':
+        #     motes[mote]['level'] = 0
+        # if t_mote_id == '2':
+        #     motes[mote]['level'] = 1
+        # if t_mote_id == '3':
+        #     motes[mote]['level'] = 1
+        # if t_mote_id == '4':
+        #     motes[mote]['level'] = 2
+        # if t_mote_id == '5':
+        #     motes[mote]['level'] = 2
+        # if t_mote_id == '6':
+        #     motes[mote]['level'] = 2
+        # if t_mote_id == '7':
+        #     motes[mote]['level'] = 3
+        # if t_mote_id == '8':
+        #     motes[mote]['level'] = 3
+        # if t_mote_id == '9':
+        #     motes[mote]['level'] = 3
 
         t_mote_id = str(mote[-1])
         if t_mote_id == '1':
@@ -38,17 +70,51 @@ def tasa_pdr_lb_algorithms(motes, local_queue, edges, max_assignable_slot, start
         if t_mote_id == '3':
             motes[mote]['level'] = 1
         if t_mote_id == '4':
-            motes[mote]['level'] = 2
+            motes[mote]['level'] = 1
         if t_mote_id == '5':
-            motes[mote]['level'] = 2
+            motes[mote]['level'] = 1
         if t_mote_id == '6':
-            motes[mote]['level'] = 2
+            motes[mote]['level'] = 1
         if t_mote_id == '7':
-            motes[mote]['level'] = 3
+            motes[mote]['level'] = 2
         if t_mote_id == '8':
             motes[mote]['level'] = 3
         if t_mote_id == '9':
             motes[mote]['level'] = 3
+        if t_mote_id == 'a':
+            motes[mote]['level'] = 3
+        if t_mote_id == 'b':
+            motes[mote]['level'] = 3
+        if t_mote_id == 'c':
+            motes[mote]['level'] = 4
+
+
+        #
+        # t_mote_id = str(mote[-2])
+        # if t_mote_id == '88':
+        #     motes[mote]['level'] = 0
+        # if t_mote_id == 'e2':
+        #     motes[mote]['level'] = 1
+        # if t_mote_id == '46':
+        #     motes[mote]['level'] = 1
+        # if t_mote_id == 'de':
+        #     motes[mote]['level'] = 1
+        # if t_mote_id == '2a':
+        #     motes[mote]['level'] = 1
+        # if t_mote_id == '64':
+        #     motes[mote]['level'] = 1
+        # if t_mote_id == 'fb':
+        #     motes[mote]['level'] = 2
+        # if t_mote_id == 'ff':
+        #     motes[mote]['level'] = 2
+        # if t_mote_id == '4f':
+        #     motes[mote]['level'] = 3
+        # if t_mote_id == 'f6':
+        #     motes[mote]['level'] = 3
+        # if t_mote_id == '0e':
+        #     motes[mote]['level'] = 4
+        # if t_mote_id == 'af':
+        #     motes[mote]['level'] = 4
 
 
     # calculate global_queue
